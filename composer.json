@@ -1,0 +1,35 @@
+{
+    "name": "colorcube/content-overview",
+    "type": "typo3-cms-extension",
+    "description": "Simple Google Map with marker and popup window",
+    "keywords": [
+        "TYPO3",
+        "extension",
+        "content_overview"
+    ],
+    "homepage": "https://bitbucket.org/colorcube/content_overview",
+    "support": {
+        "issues": "https://bitbucket.org/colorcube/content_overview/issues"
+    },
+    "authors": [
+        {
+            "name": "René Fritz",
+            "email": "r.fritz@colorcube.de",
+            "role": "Developer",
+            "homepage": "http://www.colorcube.de"
+        }
+    ],
+    "license": "GPL-2.0+",
+    "require": {
+        "typo3/cms-core": "^6.2.14 || ^7.6 || ^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Colorcube\\content_overview\\": "Classes"
+        }
+    },
+    "replace": {
+        "content_overview": "self.version",
+        "typo3-ter/content-overview": "self.version"
+    }
+}

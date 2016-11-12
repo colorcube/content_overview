@@ -1,0 +1,15 @@
+*.bak
+*.project
+*.swp
+*~
+*.sql.gz
+.DS_Store
+.TemporaryItems
+.buildpath
+.cache
+.idea/
+.project
+.sass-*
+.session
+.settings
+node_modules
