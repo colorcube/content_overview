@@ -1,7 +1,7 @@
 {
     "name": "colorcube/content-overview",
     "type": "typo3-cms-extension",
-    "description": "Simple Google Map with marker and popup window",
+    "description": "TYPO3 backend module which gives and overview of the the content elements in a page tree.",
     "keywords": [
         "TYPO3",
         "extension",
@@ -25,7 +25,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Colorcube\\content_overview\\": "Classes"
+            "Colorcube\\ContentOverview\\": "Classes"
         }
     },
     "replace": {
