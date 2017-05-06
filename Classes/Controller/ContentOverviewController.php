@@ -14,15 +14,33 @@ namespace Colorcube\ContentOverview\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Controller\PageLayoutController;
 use TYPO3\CMS\Backend\Tree\View\PageTreeView;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class for displaying a page tree with it's content elements
  */
 class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFunctionModule {
+
+    /**
+     * @var IconFactory
+     */
+    protected $iconFactory;
+
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        if (isset($GLOBALS['BE_USER']->uc['titleLen']) && $GLOBALS['BE_USER']->uc['titleLen'] > 0) {
+            $this->fixedL = $GLOBALS['BE_USER']->uc['titleLen'];
+        }
+        $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+    }
 
 	/**
 	 * Returns the menu array
@@ -89,7 +107,7 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 			$tree->init('AND ' . $this->getBackendUser()->getPagePermsClause(1));
 $tree->addField('l18n_cfg');
 			// Creating top icon; the current page
-			$HTML = IconUtility::getSpriteIconForRecord('pages', $treeStartingRecord);
+			$HTML =$this->iconFactory->getIconForRecord('pages', $treeStartingRecord, Icon::SIZE_SMALL)->render();
 			$tree->tree[] = array(
 				'row' => $treeStartingRecord,
 				'HTML' => $HTML
@@ -132,7 +150,7 @@ $tree->addField('l18n_cfg');
 			$tCells[] =
                 '<td>' . $data['depthData'] .
 
-                    $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($data['HTML'], 'pages', $data['row']['uid']) .
+                BackendUtility::wrapClickMenuOnIcon($data['HTML'], 'pages', $data['row']['uid']) .
                     '<a href="#" onclick="' . htmlspecialchars(
                         'top.loadEditId(' . (int)$data['row']['uid'] . ',"&SET[language]=0"); return false;'
                     ) . '" title="' . $lang->sL('LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_editPage') . '">' .
@@ -167,20 +185,20 @@ $tree->addField('l18n_cfg');
                         $info .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params))
                             . '" title="' . $lang->sL(
                                 'LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_editDefaultLanguagePage'
-                            ) . '">' . IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+                            ) . '">' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() . '</a>';
 
                         // "View page" link
                         $viewPageLink = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick(
                                 $row['uid'], $GLOBALS['BACK_PATH'], '', '', '', '&L='.$langRow['uid'])
                             ) . '" title="' . $lang->sL('LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_viewPage') . '">' .
-                            IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+                            $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '</a>';
 
 
                         $icon = $this->getIcon($tableName, $row);
                         $tCells[] =
                             '<td class="col-border-left" colspan="2">' .
                             '<div style="float:right; display:inline-block">' . $info . $viewPageLink . '</div>' .
-                            $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($icon, $tableName, $row['uid']) . $pageTitleHsc .
+                            BackendUtility::wrapClickMenuOnIcon($icon, $tableName, $row['uid']) . $pageTitleHsc .
                             '</td>';
 
 
@@ -289,7 +307,7 @@ $tree->addField('l18n_cfg');
                         $info = $icon . $this->linkEditContent(BackendUtility::getRecordTitle('tt_content', $row, true), $row);
 
                         $typeInfo = '';
-                        if ($row['CType'] == 'list') {
+                        if ($row['CType'] === 'list') {
                             $pluginName = BackendUtility::getLabelFromItemlist('tt_content', 'list_type', $row['list_type']);
                             $typeInfo = $this->getLanguageService()->sL($pluginName, true) . ' (' . $row['list_type'] . ')';
                         } else {
@@ -323,14 +341,17 @@ $tree->addField('l18n_cfg');
      * @return string HTML for the icon
      */
     public function getIcon($table, $row) {
-        // Initialization
-        $altText = BackendUtility::getRecordIconAltText($row, $table);
-        $icon = IconUtility::getSpriteIconForRecord($table, $row, array('title' => $altText));
-        $this->counter++;
+
         // The icon with link
-        if ($this->getBackendUser()->recordEditAccessInternals($table, $row)) {
-            $icon = $this->getPageLayoutController()->doc->wrapClickMenuOnIcon($icon, $table, $row['uid']);
-        }
+        #$altText = BackendUtility::getRecordIconAltText($row, $table);
+        $toolTip = BackendUtility::getRecordToolTip($row, $table);
+        $additionalStyle = $indent ? ' style="margin-left: ' . $indent . 'px;"' : '';
+        $iconImg = '<span ' . $toolTip . ' ' . $additionalStyle . '>'
+            . $this->iconFactory->getIconForRecord($table, $row, Icon::SIZE_SMALL)->render()
+            . '</span>';
+        $icon = $this->getBackendUser()->recordEditAccessInternals($table, $row) ? BackendUtility::wrapClickMenuOnIcon($iconImg, $table, $row['uid']) : $iconImg;
+
+
         return $icon;
     }
 
@@ -363,6 +384,7 @@ $tree->addField('l18n_cfg');
 	 */
 	public function getSystemLanguages() {
 
+        $allowed_languages= [];
 		if (!$this->getBackendUser()->user['admin'] && $this->getBackendUser()->groupData['allowed_languages'] !== '') {
 			$allowed_languages = array_flip(explode(',', $this->getBackendUser()->groupData['allowed_languages']));
 		}
