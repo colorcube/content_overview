@@ -86,7 +86,7 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 	 * @return string Output HTML for the module.
 	 */
 	public function main() {
-		$theOutput = $this->pObj->doc->header($this->getLanguageService()->sL('LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:lang_title'));
+		$theOutput = $this->pObj->doc->header($this->getLanguageService()->sL('LLL:EXT:content_overview/Resources/Private/Language/locallang_content_overview.xlf:mod_tx_cms_webinfo_content_overview'));
 		if ($this->pObj->id) {
 			// Depth selector:
 			$theOutput .= '<div class="form-inline form-inline-spaced">';
