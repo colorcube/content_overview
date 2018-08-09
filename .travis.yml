@@ -1,0 +1,52 @@
+language: php
+
+sudo: false
+
+script:
+  - >
+    echo;
+    echo "Running php lint";
+    echo;
+    echo;
+    errors=$(find . -name \*.php ! -path "./.Build/*" -exec php -d display_errors=stderr -l {} 2>&1 >/dev/null \;) && echo "$errors" && test -z "$errors"
+
+
+jobs:
+  fast_finish: true
+  include:
+    - stage: test
+      php: 7.0
+    - stage: test
+      php: 7.2
+
+    - stage: publish to ter
+      if: tag IS present
+      php: 7.1
+      before_install: skip
+      install: skip
+      before_script: skip
+      script:
+        - |
+          if [ -n "$TRAVIS_TAG" ] && [ -n "$TYPO3_ORG_USERNAME" ] && [ -n "$TYPO3_ORG_PASSWORD" ]; then
+
+            echo
+            echo "Preparing upload of release ${TRAVIS_TAG} to TER"
+            echo
+            echo
+
+            composer global require helhum/ter-client
+
+            EXTENSION_KEY="$(composer config extra.typo3/cms.extension-key)"
+
+            export PATH=$PATH:$(composer global config bin-dir --absolute 2>/dev/null)
+
+            # Cleanup before we upload
+            git reset --hard HEAD && git clean -fx
+
+            TAG_MESSAGE=`git tag -n10 -l $TRAVIS_TAG | sed 's/^[0-9.]*[ ]*//g'`
+            echo
+            echo "Uploading release ${TRAVIS_TAG} to TER"
+            echo
+            echo
+            ter-client upload "$EXTENSION_KEY" . -u "$TYPO3_ORG_USERNAME" -p "$TYPO3_ORG_PASSWORD" -m "$TAG_MESSAGE"
+          fi;
