@@ -6,8 +6,8 @@
 conf.py:
   copyright: 2015-2018
   project: Web>Info, Content Overview
-  version: 0.1
-  release: 0.1.0
+  version: 0.2
+  release: 0.2.0
   latex_documents:
   - - Index
     - content_overview.tex
