@@ -7,6 +7,7 @@
         "extension",
         "content_overview"
     ],
+    "license": "GPL-2.0-or-later",
     "homepage": "https://bitbucket.org/colorcube/content_overview",
     "support": {
         "issues": "https://bitbucket.org/colorcube/content_overview/issues"
@@ -19,9 +20,8 @@
             "homepage": "http://www.colorcube.de"
         }
     ],
-    "license": "GPL-2.0+",
     "require": {
-        "typo3/cms-core": "^6.2.14 || ^7.6 || ^8.0"
+        "typo3/cms-core": "^7.6 || ^8.0"
     },
     "autoload": {
         "psr-4": {
@@ -31,5 +31,10 @@
     "replace": {
         "content_overview": "self.version",
         "typo3-ter/content-overview": "self.version"
+    },
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "content_overview"
+        }
     }
 }
