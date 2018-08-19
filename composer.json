@@ -5,12 +5,13 @@
     "keywords": [
         "TYPO3",
         "extension",
+        "module",
         "content_overview"
     ],
     "license": "GPL-2.0-or-later",
-    "homepage": "https://bitbucket.org/colorcube/content_overview",
+    "homepage": "https://github.com/colorcube/content_overview",
     "support": {
-        "issues": "https://bitbucket.org/colorcube/content_overview/issues"
+        "issues": "https://github.com/colorcube/content_overview/issues"
     },
     "authors": [
         {

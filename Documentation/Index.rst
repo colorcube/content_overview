@@ -53,10 +53,11 @@ Web > Info > Content Overview
 
 .. toctree::
 	:maxdepth: 5
+	:titlesonly:
 
-    	Introduction/Index
-    	UsersManual/Index
-    	AdministratorManual/Index
-    	Development/Index
-    	Support/Index
-    	Links
+	Introduction/Index
+	UsersManual/Index
+	AdministratorManual/Index
+	Development/Index
+	Support/Index
+	Links

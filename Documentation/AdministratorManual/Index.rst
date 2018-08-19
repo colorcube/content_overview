@@ -36,4 +36,4 @@ Download and install the extension with the extension manager module.
 Configuration
 -------------
 
-There arent' any configuration options.
+There aren't any configuration options.
