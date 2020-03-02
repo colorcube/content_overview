@@ -23,6 +23,8 @@ Further information: https://docs.typo3.org/typo3cms/extensions/content_overview
 
 * TYPO3 7.6 - 8.7
 
+For TYPO3 9.5+ this extension needs a rewrite.
+
 ### Installation
 
 #### Installation using Composer
