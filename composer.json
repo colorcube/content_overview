@@ -30,7 +30,6 @@
         }
     },
     "replace": {
-        "content_overview": "self.version",
         "typo3-ter/content-overview": "self.version"
     },
     "extra": {
