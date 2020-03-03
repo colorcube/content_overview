@@ -17,7 +17,7 @@ The module works as expected but I wouldn't call it 'finished'. Do you have idea
 
 ## Usage
 
-Further information: https://docs.typo3.org/typo3cms/extensions/content_overview/
+Further information: https://docs.typo3.org/p/colorcube/content-overview/master/en-us/
 
 ### Dependencies
 
