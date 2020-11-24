@@ -15,21 +15,25 @@ click on the elements for editing and more information.
 
 The module works as expected but I wouldn't call it 'finished'. Do you have ideas how to improve it?
 
+The code is a bit ugly because TYPO3 backend code is almost always ugly. But I don't care (much).
+
 ## Usage
 
 Further information: https://docs.typo3.org/p/colorcube/content-overview/master/en-us/
 
 ### Dependencies
 
-* TYPO3 7.6 - 8.7
+* TYPO3 9.5 - 10.4
 
-For TYPO3 9.5+ this extension needs a rewrite.
+TYPO3 9.5 is untested.
+
+Older version work with TYPO3 v7 and v8.
 
 ### Installation
 
 #### Installation using Composer
 
-In your Composer based TYPO3 project root, just do `composer require colorcube/content-overview`. 
+In your Composer based TYPO3 project root, just do `composer require colorcube/content-overview`.
 
 #### Installation as extension from TYPO3 Extension Repository (TER)
 

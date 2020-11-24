@@ -5,17 +5,36 @@ namespace Colorcube\ContentOverview\Controller;
 
 
 use TYPO3\CMS\Backend\Controller\PageLayoutController;
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Tree\View\PageTreeView;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\EndTimeRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\StartTimeRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
+use TYPO3\CMS\Info\Controller\InfoModuleController;
 
 /**
  * Class for displaying a page tree with it's content elements
  */
-class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFunctionModule
+class ContentOverviewController
 {
+
+    /**
+     * @var int Value of the GET/POST var 'id'
+     */
+    protected $id;
+
+    /**
+     * @var InfoModuleController Contains a reference to the parent calling object
+     */
+    protected $pObj;
 
     /**
      * @var IconFactory
@@ -34,6 +53,20 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
     }
 
     /**
+     * Init, called from parent object
+     *
+     * @param InfoModuleController $pObj A reference to the parent (calling) object
+     */
+    public function init($pObj)
+    {
+        $this->pObj = $pObj;
+        $this->id = (int)GeneralUtility::_GP('id');
+        // Setting MOD_MENU items as we need them for logging:
+        $this->pObj->MOD_MENU = array_merge($this->pObj->MOD_MENU, $this->modMenu());
+        $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+    }
+
+    /**
      * Returns the menu array
      *
      * @return array
@@ -46,17 +79,18 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 
         // Page tree depth
         $menuItems['depth'] = array(
-            0 => $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_0'),
-            1 => $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_1'),
-            2 => $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_2'),
-            3 => $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_3'),
-            999 => $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_infi')
+            0 => $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.depth_0'),
+            1 => $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.depth_1'),
+            2 => $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.depth_2'),
+            3 => $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.depth_3'),
+            4 => $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.depth_4'),
+            999 => $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.depth_infi')
         );
 
         // Languages
         $languages = $this->getSystemLanguages();
 
-        $menuItems['lang'][-1] = '[All]';
+        $menuItems['lang'][-1] = $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_general.xlf:LGL.allLanguages');
         foreach ($languages as $langRec) {
             $menuItems['lang'][$langRec['uid']] = $langRec['title'];
         }
@@ -80,25 +114,24 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
      */
     public function main()
     {
-        $theOutput = $this->pObj->doc->header($this->getLanguageService()->sL('LLL:EXT:content_overview/Resources/Private/Language/locallang_content_overview.xlf:mod_tx_cms_webinfo_content_overview'));
-        if ($this->pObj->id) {
+        $theOutput = '<h1>' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:content_overview/Resources/Private/Language/locallang_content_overview.xlf:mod_tx_cms_webinfo_content_overview')) . '</h1>';
+        if ($this->id) {
             // Depth selector:
             $theOutput .= '<div class="form-inline form-inline-spaced">';
-            $h_func = BackendUtility::getDropdownMenu($this->pObj->id, 'SET[depth]', $this->pObj->MOD_SETTINGS['depth'], $this->pObj->MOD_MENU['depth']);
-            $h_func .= BackendUtility::getDropdownMenu($this->pObj->id, 'SET[lang]', $this->pObj->MOD_SETTINGS['lang'], $this->pObj->MOD_MENU['lang']);
-            $h_func .= BackendUtility::getDropdownMenu($this->pObj->id, 'SET[ctype]', $this->pObj->MOD_SETTINGS['ctype'], $this->pObj->MOD_MENU['ctype']);
+            $h_func = BackendUtility::getDropdownMenu($this->id, 'SET[depth]', $this->pObj->MOD_SETTINGS['depth'], $this->pObj->MOD_MENU['depth']);
+            $h_func .= BackendUtility::getDropdownMenu($this->id, 'SET[lang]', $this->pObj->MOD_SETTINGS['lang'], $this->pObj->MOD_MENU['lang']);
+            $h_func .= BackendUtility::getDropdownMenu($this->id, 'SET[ctype]', $this->pObj->MOD_SETTINGS['ctype'], $this->pObj->MOD_MENU['ctype']);
             $theOutput .= $h_func;
-            // Add CSH:
-            $theOutput .= BackendUtility::cshItem('_MOD_web_info', 'lang', NULL, '|<br />');
             $theOutput .= '</div>';
             // Showing the tree:
             // Initialize starting point of page tree:
-            $treeStartingPoint = (int)$this->pObj->id;
+            $treeStartingPoint = (int)$this->id;
             $treeStartingRecord = BackendUtility::getRecordWSOL('pages', $treeStartingPoint);
             $depth = $this->pObj->MOD_SETTINGS['depth'];
             // Initialize tree object:
             $tree = GeneralUtility::makeInstance(PageTreeView::class);
             $tree->init('AND ' . $this->getBackendUser()->getPagePermsClause(1));
+            $tree->addField('slug');
             $tree->addField('l18n_cfg');
             // Creating top icon; the current page
             $HTML = $this->iconFactory->getIconForRecord('pages', $treeStartingRecord, Icon::SIZE_SMALL)->render();
@@ -133,13 +166,12 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
         $titleLen = $this->getBackendUser()->uc['titleLen'];
         // Put together the TREE:
         $output = '';
-        $newOL_js = array();
         foreach ($tree->tree as $data) {
             $tCells = array();
 
             // Page tree
 
-            $pageTitleHsc = $this->linkEditContent(BackendUtility::getRecordTitle('pages', $data['row'], true), $data['row']);
+            $pageTitleHsc = $this->linkEditContent(BackendUtility::getRecordTitle('pages', $data['row'], true), $data['row'], 'pages');
 
             // Page tree column
             $tCells[] =
@@ -154,13 +186,17 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
                 '</td>';
 
 
-            $modSharedTSconfig = BackendUtility::getModTSconfig($data['row']['uid'], 'mod.SHARED');
+
+            $modSharedTSconfig = BackendUtility::getPagesTSconfig($data['row']['uid'], 'mod.SHARED');
             $disableLanguages = isset($modSharedTSconfig['properties']['disableLanguages']) ? GeneralUtility::trimExplode(',', $modSharedTSconfig['properties']['disableLanguages'], TRUE) : array();
 
             // Traverse system languages
             foreach ($languages as $langRow) {
 
+
                 if ($this->pObj->MOD_SETTINGS['lang'] == -1 || (int)$this->pObj->MOD_SETTINGS['lang'] === (int)$langRow['uid']) {
+
+                    $row = $data['row'];
 
                     if (0 == (int)$langRow['uid']) {
                         $row = $data['row'];
@@ -170,35 +206,45 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 
                     if (is_array($row)) {
 
-                        $tableName = (0 == (int)$langRow['uid']) ? 'pages' : 'pages_language_overlay';
-                        $pageTitleHsc = $this->linkEditContent(BackendUtility::getRecordTitle($tableName, $row, true), $row);
-
-                        // Edit links
-                        $info = '';
-                        $params = '&edit[' . $tableName . '][' . $row['uid'] . ']=edit';
-                        $info .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params))
+                        // "Edit page" link
+                        $urlParameters = [
+                            'edit' => [
+                                'pages' => [
+                                    $row['uid'] => 'edit'
+                                ]
+                            ],
+                            'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
+                        ];
+                        $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+                        $editUrl = (string)$uriBuilder->buildUriFromRoute('record_edit', $urlParameters);
+                        $editPageLink = '<a class="btn btn-default" href="' . htmlspecialchars($editUrl)
                             . '" title="' . $lang->sL(
                                 'LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_editDefaultLanguagePage'
                             ) . '">' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() . '</a>';
 
                         // "View page" link
-                        $viewPageLink = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick(
-                                $row['uid'], $GLOBALS['BACK_PATH'], '', '', '', '&L=' . $langRow['uid'])
-                            ) . '" title="' . $lang->sL('LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_viewPage') . '">' .
+
+                        $languageParameter = $row['sys_language_uid'] ? ('&L=' . $row['sys_language_uid']) : '';
+                        $onClick = BackendUtility::viewOnClick($row['uid'], '', BackendUtility::BEgetRootLine($row['uid']), '', '', $languageParameter);
+                        $viewPageLink = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $lang->sL('LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_viewPage') . '">' .
                             $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '</a>';
 
-
-                        $icon = $this->getIcon($tableName, $row);
                         $tCells[] =
-                            '<td class="col-border-left" colspan="2">' .
-                            '<div style="float:right; display:inline-block">' . $info . $viewPageLink . '</div>' .
-                            BackendUtility::wrapClickMenuOnIcon($icon, $tableName, $row['uid']) . $pageTitleHsc .
-                            '</td>';
+                            '<td class="col-border-left">' .  $viewPageLink . $editPageLink . '</td>';
 
+                        $icon = $this->getIcon('pages', $row);
+                        $pageTitleHsc = $this->linkEditContent(BackendUtility::getRecordTitle('pages', $row, true), $row, 'pages');
+                        $tCells[] =
+                            '<td>' . $icon . $pageTitleHsc . '</td>';
+
+                        $tCells[] =
+                            '<td class="col-border-left">' . htmlspecialchars($row['slug']). '</td>';
 
                     } else {
-                        $tCells[] = '<td class="col-border-left" colspan="2">&nbsp;</td>';
+                        $tCells[] = '<td class="col-border-left" colspan="3">&nbsp;</td>';
                     }
+
+                    $tCells[] = '<td class="col-border-left" colspan="2">&nbsp;</td>';
                 }
             }
             $output .= '
@@ -209,7 +255,6 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 
 
             // create tt_content listing
-
 
             if ($this->pObj->MOD_SETTINGS['ctype'] != '1') {
                 $overviewData = $this->getContentOverview($data['row'], $languages);
@@ -223,10 +268,12 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
                         (($data['hasSub'] && $data['invertedDepth'] > 1) ? '<span class="treeline-icon treeline-icon-line"></span>' : '') .
                         '</td>';
                     $tColspan = '';
+//                    $tCells[] = '<td class="col-border-left" colspan="3">aa</td>';
                     foreach ($languages as $sysLang => $langRow) {
                         if ($this->pObj->MOD_SETTINGS['lang'] == -1 || (int)$this->pObj->MOD_SETTINGS['lang'] === $sysLang) {
+                            $tCells[] = '<td class="col-border-left" colspan="3">&nbsp;</td>';
                             $tCells[] = '<td class="col-border-left">' . $overviewContent[$sysLang][$i]['c'] . '</td>';
-                            $tCells[] = '<td>' . $overviewContent[$sysLang][$i]['t'] . '</td>';
+                            $tCells[] = '<td class="col-border-left">' . $overviewContent[$sysLang][$i]['t'] . '</td>';
                         }
                     }
                     $output .= '
@@ -243,18 +290,20 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 
         $tCells = array();
 
-        $tCells[] = '<td>' . $lang->sL('LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_page') . ':</td>';
+        $tCells[] = '<td><strong>' . $lang->sL($GLOBALS['TCA']['pages']['columns']['title']['label']) . '</strong></td>';
 
         foreach ($languages as $langRow) {
-
             if ($this->pObj->MOD_SETTINGS['lang'] == -1 || (int)$this->pObj->MOD_SETTINGS['lang'] === (int)$langRow['uid']) {
-                $tCells[] = '<td class="col-border-left" colspan="2">' . htmlspecialchars($langRow['title']) . '</td>';
+                $tCells[] = '<td class="col-border-left" colspan="2"><strong>' . htmlspecialchars($langRow['title']) . '</strong></td>';
+                $tCells[] = '<td class="col-border-left"><strong>' . $lang->sL($GLOBALS['TCA']['pages']['columns']['slug']['label']) . '</strong></td>';
+                $tCells[] = '<td class="col-border-left"><strong>Record</strong></td>';
+                $tCells[] = '<td class="col-border-left"><strong>Record Type</strong></td>';
             }
         }
 
         $output =
             '<div class="table-fit">' .
-            '<table class="table table-striped table-hover" id="contentOverviewTable">' .
+            '<table class="table table-striped table-hover typo3-page-pages" id="contentOverviewTable">' .
             '<thead>' .
             '<tr>' .
             implode('', $tCells) .
@@ -282,14 +331,42 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 
             if ($this->pObj->MOD_SETTINGS['lang'] == -1 || (int)$this->pObj->MOD_SETTINGS['lang'] === $sysLang) {
 
-                $whereClause = ' AND sys_language_uid=' . (int)$sysLang;
-                if ($this->pObj->MOD_SETTINGS['ctype'] != '0') {
-                    $whereClause .= ' AND CType=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->pObj->MOD_SETTINGS['ctype'], 'tt_content');
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
+                $queryBuilder->getRestrictions()->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, (int)$this->getBackendUser()->workspace));
+                if (true) { // $showHidden
+                    $queryBuilder->getRestrictions()
+                        ->removeByType(HiddenRestriction::class)
+                        ->removeByType(StartTimeRestriction::class)
+                        ->removeByType(EndTimeRestriction::class);
+                }
+                $queryBuilder
+                    ->select('*')
+                    ->from('tt_content')
+                    ->where(
+                        $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pageItem['uid'], \PDO::PARAM_INT)),
+                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($sysLang, \PDO::PARAM_INT))
+                    )
+                    ->orderBy('sorting');
+
+                if ($this->pObj->MOD_SETTINGS['lang'] == -1 || (int)$this->pObj->MOD_SETTINGS['lang'] === $sysLang) {
+                    $queryBuilder->andWhere(
+                        $queryBuilder->expr()->eq(
+                            'sys_language_uid',
+                            $queryBuilder->createNamedParameter($sysLang, \PDO::PARAM_INT)
+                        )
+                    );
                 }
 
-#$count = $this->getDatabaseConnection()->exec_SELECTcountRows('uid', 'tt_content', 'pid=' . (int)$pageId . ' AND sys_language_uid=' . (int)$sysLang . BackendUtility::deleteClause('tt_content') . BackendUtility::versioningPlaceholderClause('tt_content'));
-#TODO check versioning etc
-                $rows = BackendUtility::getRecordsByField('tt_content', 'pid', $pageItem['uid'], $whereClause, $groupBy = '', $orderBy = 'sorting', $limit = '', $useDeleteClause = true);
+                if ($this->pObj->MOD_SETTINGS['ctype']) {
+                    $queryBuilder->andWhere(
+                        $queryBuilder->expr()->eq(
+                            'CType',
+                            $queryBuilder->createNamedParameter($this->pObj->MOD_SETTINGS['ctype'], \PDO::PARAM_STR)
+                        )
+                    );
+                }
+
+                $rows = $queryBuilder->execute()->fetchAllAssociative();
 
                 $table[$sysLang] = array();
 
@@ -301,7 +378,7 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 
                         $icon = $this->getIcon('tt_content', $row);
 
-                        $info = $icon . $this->linkEditContent(BackendUtility::getRecordTitle('tt_content', $row, true), $row);
+                        $info = $icon . $this->linkEditContent(BackendUtility::getRecordTitle('tt_content', $row, true), $row, 'tt_content');
 
                         $typeInfo = '';
                         if ($row['CType'] === 'list') {
@@ -339,7 +416,6 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
      */
     public function getIcon($table, $row)
     {
-
         // The icon with link
         #$altText = BackendUtility::getRecordIconAltText($row, $table);
         $toolTip = BackendUtility::getRecordToolTip($row, $table);
@@ -348,30 +424,32 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
             . '</span>';
         $icon = $this->getBackendUser()->recordEditAccessInternals($table, $row) ? BackendUtility::wrapClickMenuOnIcon($iconImg, $table, $row['uid']) : $iconImg;
 
-
         return $icon;
     }
 
     /**
-     * Will create a link on the input string and possibly a big button after the string which links to editing in the RTE.
-     * Used for content element content displayed so the user can click the content / "Edit in Rich Text Editor" button
+     * Will create a link on the input string
      *
      * @param string $str String to link. Must be prepared for HTML output.
      * @param array $row The row.
-     * @return string If the whole thing was editable ($this->doEdit) $str is return with link around. Otherwise just $str.
-     * @see getTable_tt_content()
      */
-    public function linkEditContent($str, $row)
+    public function linkEditContent($str, $row, $table)
     {
-        $addButton = '';
-        $onClick = '';
         if ($this->getBackendUser()->recordEditAccessInternals('tt_content', $row)) {
-            // Setting onclick action for content link:
-            $onClick = BackendUtility::editOnClick('&edit[tt_content][' . $row['uid'] . ']=edit');
+            $urlParameters = [
+                'edit' => [
+                    $table => [
+                        $row['uid'] => 'edit'
+                    ]
+                ],
+                'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
+            ];
+            $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+            $editUrl = (string)$uriBuilder->buildUriFromRoute('record_edit', $urlParameters);
+
+            return '<a href="' . htmlspecialchars($editUrl) . '" title="' . $this->getLanguageService()->getLL('edit') . '">' . $str . '</a>';
         }
-        // Return link
-        return $onClick ? '<a href="#" onclick="' . htmlspecialchars($onClick)
-            . '" title="' . $this->getLanguageService()->getLL('edit', TRUE) . '">' . $str . '</a>' . $addButton : $str;
+        return $str;
     }
 
 
@@ -387,9 +465,34 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
         if (!$this->getBackendUser()->user['admin'] && $this->getBackendUser()->groupData['allowed_languages'] !== '') {
             $allowed_languages = array_flip(explode(',', $this->getBackendUser()->groupData['allowed_languages']));
         }
-        $res = $this->getDatabaseConnection()->exec_SELECTquery('*', 'sys_language', '1=1' . BackendUtility::deleteClause('sys_language'));
-        $languagesList = array();
-        while ($row = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable('sys_language');
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+        $queryBuilder
+            ->select('uid', 'title')
+            ->from('sys_language')
+            ->where($queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT)));
+        $rows = array_merge(
+//            [
+//                [
+//                    'uid' => -1,
+//                    'title' => $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_general.xlf:LGL.allLanguages')
+//                ]
+//            ],
+            [
+                [
+                    'uid' => 0,
+                    'title' => $this->getLanguageService()->sL('LLL:EXT:info/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_default')
+                ]
+            ],
+            $queryBuilder->execute()->fetchAllAssociative()
+        );
+
+        $languagesList = [];
+        foreach ($rows as $row) {
             if (is_array($allowed_languages) && !empty($allowed_languages)) {
                 if (isset($allowed_languages[$row['uid']])) {
                     $languagesList[$row['uid']] = $row;
@@ -398,19 +501,6 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
                 $languagesList[$row['uid']] = $row;
             }
         }
-        $this->getDatabaseConnection()->sql_free_result($res);
-
-        if (!isset($languagesList[0])) {
-            $languagesList[0] = array(
-                'uid' => 0,
-#FIXME get tsconfig lang name
-                'title' => $this->getLanguageService()->sL(
-                    'LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_default'
-                )
-            );
-        }
-
-        ksort($languagesList);
 
         return $languagesList;
     }
@@ -424,35 +514,24 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
      */
     public function getLangStatus($pageId, $langId)
     {
-        $res = $this->getDatabaseConnection()->exec_SELECTquery(
-            '*',
-            'pages_language_overlay',
-            'pid=' . (int)$pageId .
-            ' AND sys_language_uid=' . (int)$langId .
-            BackendUtility::deleteClause('pages_language_overlay') .
-            BackendUtility::versioningPlaceholderClause('pages_language_overlay')
-        );
-        $row = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-        BackendUtility::workspaceOL('pages_language_overlay', $row);
-        if (is_array($row)) {
-            $row['_COUNT'] = $this->getDatabaseConnection()->sql_num_rows($res);
-            $row['_HIDDEN'] = $row['hidden'] || ((int)$row['endtime'] > 0 && (int)$row['endtime'] < $GLOBALS['EXEC_TIME']) || $GLOBALS['EXEC_TIME'] < (int)$row['starttime'];
-        }
-        return $row;
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+        $queryBuilder->getRestrictions()->removeAll()->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+        return $queryBuilder->select('*')
+            ->from('pages')
+            ->where(
+                $queryBuilder->expr()->eq(
+                    'l10n_parent',
+                    $queryBuilder->createNamedParameter($pageId, \PDO::PARAM_INT)
+                ),
+                $queryBuilder->expr()->eq(
+                    $GLOBALS['TCA']['pages']['ctrl']['languageField'],
+                    $queryBuilder->createNamedParameter($langId, \PDO::PARAM_INT)
+                )
+            )
+            ->execute()
+            ->fetchAssociative();
     }
 
-    /**
-     * Counting content elements for a single language on a page.
-     *
-     * @param int $pageId Page id to select for.
-     * @param int $sysLang Sys language uid
-     * @return int Number of content elements from the PID where the language is set to a certain value.
-     */
-    public function getContentElementCount($pageId, $sysLang)
-    {
-        $count = $this->getDatabaseConnection()->exec_SELECTcountRows('uid', 'tt_content', 'pid=' . (int)$pageId . ' AND sys_language_uid=' . (int)$sysLang . BackendUtility::deleteClause('tt_content') . BackendUtility::versioningPlaceholderClause('tt_content'));
-        return $count ?: '-';
-    }
 
     /**
      * @return PageLayoutController
@@ -471,16 +550,6 @@ class ContentOverviewController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
     protected function getLanguageService()
     {
         return $GLOBALS['LANG'];
-    }
-
-    /**
-     * Returns the database connection
-     *
-     * @return \TYPO3\CMS\Core\Database\DatabaseConnection
-     */
-    protected function getDatabaseConnection()
-    {
-        return $GLOBALS['TYPO3_DB'];
     }
 
     /**
