@@ -23,9 +23,9 @@ Further information: https://docs.typo3.org/p/colorcube/content-overview/master/
 
 ### Dependencies
 
-* TYPO3 9.5 - 10.4
+* TYPO3 10.4
 
-TYPO3 9.5 is untested.
+Might work with TYPO3 9.5 but is untested.
 
 Older version work with TYPO3 v7 and v8.
 
