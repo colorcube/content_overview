@@ -15,13 +15,11 @@ jobs:
   fast_finish: true
   include:
     - stage: test
-      php: 7.0
-    - stage: test
       php: 7.2
 
     - stage: publish to ter
       if: tag IS present
-      php: 7.1
+      php: 7.2
       before_install: skip
       install: skip
       before_script: skip
