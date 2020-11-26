@@ -3,7 +3,6 @@
 namespace Colorcube\ContentOverview\Controller;
 
 
-
 use TYPO3\CMS\Backend\Controller\PageLayoutController;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Tree\View\PageTreeView;
@@ -75,17 +74,17 @@ class ContentOverviewController
     {
         $lang = $this->getLanguageService();
 
-        $menuItems = array();
+        $menuItems = [];
 
         // Page tree depth
-        $menuItems['depth'] = array(
+        $menuItems['depth'] = [
             0 => $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.depth_0'),
             1 => $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.depth_1'),
             2 => $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.depth_2'),
             3 => $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.depth_3'),
             4 => $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.depth_4'),
             999 => $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.depth_infi')
-        );
+        ];
 
         // Languages
         $languages = $this->getSystemLanguages();
@@ -135,10 +134,10 @@ class ContentOverviewController
             $tree->addField('l18n_cfg');
             // Creating top icon; the current page
             $HTML = $this->iconFactory->getIconForRecord('pages', $treeStartingRecord, Icon::SIZE_SMALL)->render();
-            $tree->tree[] = array(
+            $tree->tree[] = [
                 'row' => $treeStartingRecord,
                 'HTML' => $HTML
-            );
+            ];
             // Create the tree from starting point:
             if ($depth) {
                 $tree->getTree($treeStartingPoint, $depth, '');
@@ -167,7 +166,7 @@ class ContentOverviewController
         // Put together the TREE:
         $output = '';
         foreach ($tree->tree as $data) {
-            $tCells = array();
+            $tCells = [];
 
             // Page tree
 
@@ -186,9 +185,8 @@ class ContentOverviewController
                 '</td>';
 
 
-
             $modSharedTSconfig = BackendUtility::getPagesTSconfig($data['row']['uid'], 'mod.SHARED');
-            $disableLanguages = isset($modSharedTSconfig['properties']['disableLanguages']) ? GeneralUtility::trimExplode(',', $modSharedTSconfig['properties']['disableLanguages'], TRUE) : array();
+            $disableLanguages = isset($modSharedTSconfig['properties']['disableLanguages']) ? GeneralUtility::trimExplode(',', $modSharedTSconfig['properties']['disableLanguages'], true) : [];
 
             // Traverse system languages
             foreach ($languages as $langRow) {
@@ -230,7 +228,7 @@ class ContentOverviewController
                             $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '</a>';
 
                         $tCells[] =
-                            '<td class="col-border-left">' .  $viewPageLink . $editPageLink . '</td>';
+                            '<td class="col-border-left">' . $viewPageLink . $editPageLink . '</td>';
 
                         $icon = $this->getIcon('pages', $row);
                         $pageTitleHsc = $this->linkEditContent(BackendUtility::getRecordTitle('pages', $row, true), $row, 'pages');
@@ -238,7 +236,7 @@ class ContentOverviewController
                             '<td>' . $icon . $pageTitleHsc . '</td>';
 
                         $tCells[] =
-                            '<td class="col-border-left">' . htmlspecialchars($row['slug']). '</td>';
+                            '<td class="col-border-left">' . htmlspecialchars($row['slug']) . '</td>';
 
                     } else {
                         $tCells[] = '<td class="col-border-left" colspan="3">&nbsp;</td>';
@@ -262,7 +260,7 @@ class ContentOverviewController
                 $overviewContent = $overviewData['content'];
 
                 for ($i = 0; $i < $maxCount; $i++) {
-                    $tCells = array();
+                    $tCells = [];
                     $tCells[] = '<td>' . $data['depthData'] .
                         ($data['isLast'] ? '' : '<span class="treeline-icon treeline-icon-line"></span>') .
                         (($data['hasSub'] && $data['invertedDepth'] > 1) ? '<span class="treeline-icon treeline-icon-line"></span>' : '') .
@@ -288,7 +286,7 @@ class ContentOverviewController
 
         // table header
 
-        $tCells = array();
+        $tCells = [];
 
         $tCells[] = '<td><strong>' . $lang->sL($GLOBALS['TCA']['pages']['columns']['title']['label']) . '</strong></td>';
 
@@ -322,7 +320,7 @@ class ContentOverviewController
     {
 
         $maxCount = 0;
-        $table = array();
+        $table = [];
 
         // Traverse system languages:
         foreach ($languages as $langRow) {
@@ -366,9 +364,9 @@ class ContentOverviewController
                     );
                 }
 
-                $rows = $queryBuilder->execute()->fetchAllAssociative();
+                $rows = $queryBuilder->execute()->fetchAll();
 
-                $table[$sysLang] = array();
+                $table[$sysLang] = [];
 
                 if ($rows) {
 
@@ -390,10 +388,10 @@ class ContentOverviewController
                             $typeInfo = $this->getLanguageService()->sL($CTypeName, true) . ' (' . $row['CType'] . ')';
                         }
 
-                        $table[$sysLang][] = array(
+                        $table[$sysLang][] = [
                             'c' => $info,
                             't' => htmlspecialchars($typeInfo)
-                        );
+                        ];
 
                     }
                 }
@@ -401,10 +399,10 @@ class ContentOverviewController
 
         }
 
-        return array(
+        return [
             'maxCount' => $maxCount,
             'content' => $table
-        );
+        ];
     }
 
     /**
@@ -488,7 +486,7 @@ class ContentOverviewController
                     'title' => $this->getLanguageService()->sL('LLL:EXT:info/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_default')
                 ]
             ],
-            $queryBuilder->execute()->fetchAllAssociative()
+            $queryBuilder->execute()->fetchAll()
         );
 
         $languagesList = [];
